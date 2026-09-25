@@ -1,76 +1,113 @@
-# ApexOne Knowledge Assistant
+APEXONE KNOWLEDGE ASSISTANT
 
-A small, local app for answering employee questions from the supplied **synthetic** company documents. It shows evidence for supported answers and safely declines when information is missing or outside the selected employee's access. The local app needs **no AI model, Azure account, GPU, or paid API**.
+A small, local employee knowledge assistant built for the Kentrick.ai hiring assessment. It uses the supplied synthetic company documents. It finds authorized evidence, checks each claim and citation, and safely declines when it cannot support an answer.
 
-**Video walkthrough:** [Watch the demo on Google Drive](https://drive.google.com/file/d/18NStyXGlT3LmQxuKvMoaj8iysiUR_UnW/view?usp=sharing). Confirm the link opens for reviewers who are not signed in to your account.
+Video walkthrough: https://drive.google.com/file/d/18NStyXGlT3LmQxuKvMoaj8iysiUR_UnW/view?usp=sharing
+Copy-paste questions for reviewers are in the TEST PACK at the end of this file.
 
-## Start the app — Windows
+RUN THE APP ON WINDOWS
 
-You need **Python 3.11 or newer**. Open this folder in File Explorer, click its address bar, type `powershell`, and press Enter. Run these **two lines once**:
+Install Python 3.11 or newer. Open this folder in File Explorer, type powershell in the address bar, and run these two commands once:
 
-```powershell
 python -m venv .venv
+
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-```
 
-Then **double-click `Start ApexOne Assistant.cmd`**. It opens the app in your browser. Keep its black console window open while using the app; close the window to stop it.
+Then double-click Start ApexOne Assistant.cmd. It opens the local browser app. Keep its console window open while using the app; close it to stop the app.
 
-**On the current candidate PC only:** Python is already installed but not on PATH. Replace the **first** setup line with this one; the second line stays the same:
+On the candidate's PC, Python is installed but not on PATH. Use this instead of the first command above:
 
-```powershell
 & "C:\Users\user\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -m venv .venv
-```
 
-On another PC, if `python` is not recognized, install Python 3.11+ with the “Add Python to PATH” option, reopen PowerShell, and repeat the two setup lines. Installation may download Python packaging and test tools; **running** the app needs no network connection. The app stays on your own computer (`127.0.0.1`); do not expose it publicly.
+On another PC, install Python 3.11+ with "Add Python to PATH" if python is not recognized. Installation can use the internet; running the app does not. The app is for local use at 127.0.0.1, not a public server. The employee dropdown is a demo selector, not real authentication.
 
-### Try one question
+QUICK CHECK
 
-In the app, select **Leila Mansour (Procurement)**, then paste:
+Select Leila Mansour (Procurement) and ask: What is our process for approving a new enterprise vendor?
 
-```text
-What is our process for approving a new enterprise vendor?
-```
+The answer should cite the current vendor policy and approval matrix. Click a citation to view the authorized normalized source lines. The citation viewer does not open the original PDF page.
 
-The answer should use the current vendor policy and approval matrix. Click a citation to see its authorized normalized source lines. The employee dropdown is a **demo identity selector**, not a real sign-in. More copy-paste examples are in the [recording guide](docs/FINAL_RECORDING_GUIDE.md).
+To run the automated checks from this folder:
 
-## Check the result
-
-Open PowerShell in this folder and run:
-
-```powershell
 .\.venv\Scripts\python.exe -m apex_assistant evaluate --stage full
+
 .\.venv\Scripts\python.exe -m pytest -q
-```
 
-The first command tests ten business cases and writes `evaluation/results/latest.json` and `latest.md`. A critical failure gives a nonzero exit code. The latest checked run passed all ten cases and 96 tests, including unseen wording, spelling mistakes, and greetings. Business answers remain evidence-grounded extracts, not free-form AI summaries. `passed: true` is **not** the same as `submission_ready: true`; candidate review and reviewer-access checks remain. See the [evaluation contract](evaluation/README.md) and [safety checkpoints](evaluation/safety-checkpoints.md).
+Last checked: all 10 assessment cases and 96 automated tests passed. A passing test report does not prove the app can answer every question. Business answers are reviewed source extracts, not model-written summaries.
 
-For a command-line question instead of the browser:
+HOW THE DECISION WORKS
 
-```powershell
-.\.venv\Scripts\python.exe -m apex_assistant ask --user u-proc-310 --question "What is our process for approving a new enterprise vendor?"
-```
+Employee and question
 
-## What the program does
+  -> Check the identity and input. An unknown identity is denied before search.
 
-```text
-Check employee → allow documents → search current evidence → verify claims and citations → answer or safely decline
-```
+  -> A greeting alone gets a short app-written reply, with no business claim.
 
-- **Permission first:** documents the employee cannot use never enter search or ranking. An unavailable response does not reveal whether a private file exists.
-- **Evidence first:** important claims come from reviewed, authorized source lines; the final check verifies citations. Current policy outranks retired policy, and a missing contractual SLA is never invented.
-- **Safe documents:** instructions embedded in a document cannot change app rules or permissions. The trusted hypercontext file helps navigation but is not a source of business facts or access rights.
-- **Conversational basics:** short greetings, help requests, and thanks receive a simple response. A greeting attached to a real question still uses the authorized, cited answer path.
+  -> For a real question, decide which documents this employee may use.
 
-The app reads `data/assessment/normalized/corpus.jsonl` and its trusted manifest/access files. Original PDF/DOCX files are reference material and are not parsed at runtime. The [simple process model](docs/process-model.md) and [decision records](docs/decisions/) explain the boundaries and alternatives. The main limitation is narrower language coverage than a carefully verified model-assisted system; reviewed evidence also needs reapproval when source text changes. Citations point to normalized text lines, not PDF pages.
+  -> Search and rank only those documents. Retired or future-effective material does not become current guidance.
 
-## Azure design and AI use
+  -> One or more relevant, allowed sources may contribute. Required sources and checks must all pass.
 
-The [Azure architecture](docs/azure-architecture.md) is a **design only**: it shows employee and content flows, services, access controls, operations, trade-offs, and migration priorities. No Azure resources were created. A [possible model extension](docs/azure-model-integration.md) places a regional model after authorization and evidence checks; **no model or agent runs in this local app**.
+  -> Select reviewed source passages; verify every claim, citation, status, and source line again.
 
-Codex substantially assisted the source, UI, tests, evaluator, Azure design, and documentation. The candidate selected the scope and key controls—permission before search, default deny, reviewed claims, final citation checks, and release-blocking tests—but personal review and ability to explain or modify the work are still pending. See the detailed [AI-assistance log](docs/ai-assistance-log.md). Do not claim candidate-only authorship or completed review.
+  -> Show the supported answer, a qualified answer, or a safe explanation of what is missing.
 
-## Before submission
+The important order is permission before search. An inaccessible file cannot influence ranking or the answer. A missing contract term is not invented. Document text cannot change the app's instructions or permissions. Switching the demo employee clears the visible chat. The full process model is in docs/process-model.md.
 
-The video link is above. Before sending the submission, open it in a private browser window to confirm reviewer access, and complete your own review of the work. This repository is already public.
+P6 SOURCE CHECK
 
-The bundled UI adapts Start Bootstrap Simple Sidebar; see `src/apex_assistant/web/THIRD_PARTY.md` and its MIT license. The Kentrick-inspired “K” is a demo mark, not an official logo.
+For the HR case question in the test pack, select Omar Haddad (Human Resources) before asking. The expected citation is APX-HR-CASE-778, version 1.0, and no other case. It supports an interim measure and says no final finding was reached. Maya Chen (Engineering) must receive no case citation. Do not display or read detailed case allegations in a public recording.
+
+PROJECT FILES AND LIMITS
+
+src/apex_assistant/ contains the local Python app and browser UI.
+data/assessment/ contains the supplied synthetic source pack; original PDF/DOCX files are references, while runtime search uses normalized text.
+evaluation/ contains the assessment cases and latest reports.
+docs/process-model.md explains the full decision flow; docs/azure-architecture.md and docs/azure-model-integration.md describe proposed Azure and model designs, not running cloud services.
+
+No AI model or agent runs in this local app. It works on a CPU without Azure or paid APIs. It handles supported topics, common paraphrases, some typos, and basic greetings, but it does not provide open-ended AI conversation. Citations refer to normalized text lines, not PDF page numbers. Source changes require review before new passages can be used as claims.
+
+Codex substantially assisted the implementation, testing, and documentation. The work and its limits are recorded in docs/ai-assistance-log.md. Reviewer access to the video should be checked in a private browser window.
+
+TEST PACK — SELECT THE EMPLOYEE, THEN COPY THE QUESTION
+
+P1 — SHOULD ANSWER. Employee: Leila Mansour (Procurement).
+Question: What is our process for approving a new enterprise vendor?
+Check: Current vendor policy v3.0 and approval matrix v1.2; no retired-policy citation.
+
+P2 — SHOULD ANSWER. Employee: Leila Mansour (Procurement).
+Question: How do we onboard a supplier that will access company systems?
+Check: Current vendor policy and approval matrix; system access triggers the enterprise process.
+
+P3 — SHOULD ANSWER. Employee: Leila Mansour (Procurement).
+Question: Does a low-risk renewal below USD 100,000 using the unchanged approved standard agreement need a separate lawyer signature?
+Check: Current policy plus the scoped Legal advisory; the general Legal stage remains.
+
+P4 — SHOULD ANSWER. Employee: Maya Chen (Engineering).
+Question: How do I request annual leave and when should I submit it?
+Check: General leave policy; HR portal, timing, and manager approval. No investigation case.
+
+P5 — SHOULD ANSWER. Employee: Omar Haddad (Human Resources).
+Question: How do employees request annual leave?
+Check: General leave policy only; HR access does not make a private case relevant.
+
+P6 — SHOULD ANSWER. Employee: Omar Haddad (Human Resources).
+Question: For case APX-HR-CASE-778, why was the employee placed on administrative leave and what is the current status?
+Check: Only APX-HR-CASE-778 v1.0 is cited; interim measure and no final finding. Avoid reading sensitive detail aloud.
+
+P7 — SHOULD ANSWER WITH WARNING. Employee: Maya Chen (Engineering).
+Question: Summarize the requirements in the legacy assistant migration notes.
+Check: Unverified migration note is cited with a warning; embedded instructions are ignored.
+
+S1 — SHOULD SAFELY DECLINE. Employee: Maya Chen (Engineering).
+Question: Why was employee E-8841 placed on administrative leave?
+Check: No authorized evidence, no case citation, and no confirmation of a restricted record.
+
+S2 — SHOULD NOT INVENT AN SLA. Employee: Leila Mansour (Procurement).
+Question: What contractual first-response time did NexaServe commit to?
+Check: Insufficient evidence. The agreement may be cited to explain the missing term, but no numeric promise is invented.
+
+S3 — SHOULD SAFELY DECLINE. Employee: Maya Chen (Engineering).
+Question: What is our remote-work policy?
+Check: Insufficient evidence; no made-up remote-work rule or citation.

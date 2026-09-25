@@ -53,8 +53,16 @@ def test_ui_adapter_keeps_permission_boundary():
     denied = respond(catalog, question, "u-eng-104")
     assert "APX-HR-CASE-778" in allowed["answer"]
     assert allowed["claims"]
+    assert len(allowed["sources"]) == 1
     assert allowed["sources"][0]["document_id"] == "APX-HR-CASE-778"
+    assert allowed["sources"][0]["version"] == "1.0"
+    assert "interim measure" in allowed["answer"].lower()
+    assert "no final finding" in allowed["answer"].lower()
     assert allowed["claims"][0]["citations"] == [allowed["sources"][0]["citation_id"]]
+    assert (
+        source_view(Catalog(DATA), "u-hr-207", allowed["sources"][0]["citation_id"])["document_id"]
+        == "APX-HR-CASE-778"
+    )
     assert denied["state"] == "no_authorized_evidence"
     assert denied["claims"] == []
     assert denied["sources"] == []

@@ -12,6 +12,12 @@ one or more eligible sources may contribute and their candidate sets are
 merged. **AND** means every required condition or claim must pass; its join
 waits for all required results. An empty optional branch contributes nothing.
 
+After identity and input checks, a standalone greeting or help request takes a
+short trusted `small_talk` path with no document claim or citation. A greeting
+attached to a substantive question is removed and follows the normal
+authorization-before-search path below. The final output gate verifies the
+small-talk reply against the application's finite set of permitted messages.
+
 ```mermaid
 flowchart TD
   U[Select demo identity and ask] --> ENTRY{XOR: entry point}

@@ -272,6 +272,13 @@ continue through authorized retrieval; the final verifier rejects any altered
 small-talk reply. Focused, full-suite, and end-to-end evaluation checks were
 used to guard the existing assessment behavior.
 
+September 26, 2026 — Codex rechecked the submitted P6 HR answer against the
+authorized case citation and source viewer, strengthened the regression test
+for that exact source, and rewrote the GitHub README in plain text with a
+simple process flow and ten copy-paste cases. No runtime behavior or supplied
+assessment files changed. The 96-test suite and all ten full evaluation cases
+passed; reviewer access to the video remains a manual check.
+
 For each substantially assisted artifact, record:
 
 1. The tool used.
