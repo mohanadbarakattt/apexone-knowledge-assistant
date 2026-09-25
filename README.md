@@ -2,6 +2,8 @@
 
 A small, local app for answering employee questions from the supplied **synthetic** company documents. It shows evidence for supported answers and safely declines when information is missing or outside the selected employee's access. The local app needs **no AI model, Azure account, GPU, or paid API**.
 
+**Video walkthrough:** [Watch the demo on Google Drive](https://drive.google.com/file/d/18NStyXGlT3LmQxuKvMoaj8iysiUR_UnW/view?usp=sharing). Confirm the link opens for reviewers who are not signed in to your account.
+
 ## Start the app — Windows
 
 You need **Python 3.11 or newer**. Open this folder in File Explorer, click its address bar, type `powershell`, and press Enter. Run these **two lines once**:
@@ -40,7 +42,7 @@ Open PowerShell in this folder and run:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The first command tests ten business cases and writes `evaluation/results/latest.json` and `latest.md`. A critical failure gives a nonzero exit code. The latest checked run passed all ten cases and 96 tests, including unseen wording, spelling mistakes, and greetings. Business answers remain evidence-grounded extracts, not free-form AI summaries. `passed: true` is **not** the same as `submission_ready: true`; candidate review, the recording, and reviewer-access checks remain. See the [evaluation contract](evaluation/README.md) and [safety checkpoints](evaluation/safety-checkpoints.md).
+The first command tests ten business cases and writes `evaluation/results/latest.json` and `latest.md`. A critical failure gives a nonzero exit code. The latest checked run passed all ten cases and 96 tests, including unseen wording, spelling mistakes, and greetings. Business answers remain evidence-grounded extracts, not free-form AI summaries. `passed: true` is **not** the same as `submission_ready: true`; candidate review and reviewer-access checks remain. See the [evaluation contract](evaluation/README.md) and [safety checkpoints](evaluation/safety-checkpoints.md).
 
 For a command-line question instead of the browser:
 
@@ -69,6 +71,6 @@ Codex substantially assisted the source, UI, tests, evaluator, Azure design, and
 
 ## Before submission
 
-**Video link:** pending the 5–7 minute recording and reviewer-access check. Add the private/unlisted URL here after filming. Publish this folder as a reviewer-accessible repository only after completing candidate review and final checks.
+The video link is above. Before sending the submission, open it in a private browser window to confirm reviewer access, and complete your own review of the work. This repository is already public.
 
 The bundled UI adapts Start Bootstrap Simple Sidebar; see `src/apex_assistant/web/THIRD_PARTY.md` and its MIT license. The Kentrick-inspired “K” is a demo mark, not an official logo.
