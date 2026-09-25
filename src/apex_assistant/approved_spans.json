@@ -5,6 +5,8 @@
     {"document_id": "APX-ENG-KB-991", "version": "0.9", "line_start": 31, "line_end": 38, "sha256": "e3a73648074f98ede114166a2637cf63f9710321282a6b2f8e3c14ae691faa97"},
     {"document_id": "APX-HR-CASE-778", "version": "1.0", "line_start": 23, "line_end": 32, "sha256": "f7c2139db153b77dc80f575760597d4b9dbd8125b714e422f6ef7114dd0417f1"},
     {"document_id": "APX-HR-POL-003", "version": "4.2", "line_start": 5, "line_end": 5, "sha256": "452a514b162c677b14d9af665a7d63330dea15eb02e8a6540626f3145add11fa"},
+    {"document_id": "APX-HR-POL-003", "version": "4.2", "line_start": 7, "line_end": 7, "sha256": "a09c7b66d7214cf0883149b0d386dc077b4ddedd697180185d570b2fa4454766"},
+    {"document_id": "APX-HR-POL-003", "version": "4.2", "line_start": 9, "line_end": 9, "sha256": "1587a2ba830233b4f14c4e38f68f7edf1663e1f3e5b1469d175aa7e4b5f74fa8"},
     {"document_id": "APX-LEG-CON-NS-2026", "version": "1.0", "line_start": 28, "line_end": 31, "sha256": "1b29a39f23d63a5d4cad1141de1ad48ca783fbba20253e8bbb50430cba4e2ea2"},
     {"document_id": "APX-LEGAL-MEM-027", "version": "1.0", "line_start": 23, "line_end": 30, "sha256": "885cf7d743a02b59d40450b15b4c95a04e6f5bee4bc93f77730e1aeb7cc2c731"},
     {"document_id": "APX-PROC-MTX-006", "version": "1.2", "line_start": 18, "line_end": 21, "sha256": "ed05ef989eb84b3d2d066e87518879883ab0fd676dd7af56b28d9f20945afcc9"},

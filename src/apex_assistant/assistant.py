@@ -7,7 +7,7 @@ import re
 from datetime import date
 
 from .access import Catalog, Document
-from .retrieval import retrieve, tokens
+from .retrieval import query_tokens, retrieve, tokens
 from .reviewed import is_approved
 from .safety import verify_answer
 
@@ -31,11 +31,16 @@ NO_AVAILABLE_EVIDENCE = (
 
 
 def _intent(question: str) -> str:
-    words = tokens(question)
+    words = query_tokens(question)
     lowered = question.lower()
     if re.search(r"\b(?:apx-hr-case-\d+|e-\d+)\b", lowered) or {"investigation", "case"} & words:
         return "investigation"
-    if {"sla", "response", "service"} & words and {"nexaserve", "contractual", "commit"} & words:
+    if {"sla", "response", "service"} & words and {
+        "nexaserve",
+        "contractual",
+        "contract",
+        "commit",
+    } & words:
         return "sla"
     if "renewal" in words and {"lawyer", "legal", "signature", "standard"} & words:
         return "renewal"
@@ -235,7 +240,13 @@ def _compose_answer(
         policy = _source(visible, "employee", "leave", "policy")
         if policy is None:
             return _safe("insufficient_evidence", "The general leave policy is unavailable.")
-        selected = [_claim(policy, _slice(policy, "1. Annual leave", "2. Sick leave"))]
+        words = query_tokens(question)
+        if "sick" in words:
+            selected = [_claim(policy, _line(policy, "Employees should notify their manager"))]
+        elif {"emergency", "family"} & words:
+            selected = [_claim(policy, _line(policy, "Emergency and family leave requests"))]
+        else:
+            selected = [_claim(policy, _slice(policy, "1. Annual leave", "2. Sick leave"))]
     elif intent == "investigation":
         case = _source(visible, "employee", "relations", "investigation", "summary")
         if case is None:

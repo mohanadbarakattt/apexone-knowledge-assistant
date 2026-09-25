@@ -256,6 +256,15 @@ Validation includes restricted-content mutation/removal invariance, broken-acces
 evaluation, nonzero failure exits, source checks, lint, formatting, and the full test suite.
 Final answer behavior is still pending Build 2. Candidate review and teach-back are pending.
 
+September 25, 2026 — Codex investigated unseen questions and typos, then added
+conservative static-vocabulary query correction and leave-subtopic selection.
+The business logic retained was authorization before retrieval, reviewed exact
+source spans before claims, and final citation verification. Two additional
+lines of the supplied current leave policy were explicitly reviewed and
+hash-registered; no assessment data was edited. The candidate should review
+the distinction between deterministic evidence answers and true model-written
+summaries. Validation: 83 tests, all ten full evaluation cases, and Ruff checks.
+
 For each substantially assisted artifact, record:
 
 1. The tool used.

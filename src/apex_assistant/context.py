@@ -8,7 +8,7 @@ from functools import lru_cache
 from importlib.resources import files
 
 from .access import Catalog, Document
-from .retrieval import tokens
+from .retrieval import query_tokens, tokens
 
 ELIGIBLE_STATUSES = frozenset({"Current", "Active", "Active advisory", "Open", "Unverified"})
 REQUIRED_RESPONSE_FIELDS = frozenset(
@@ -143,7 +143,7 @@ def topic_document_ids(
 ) -> frozenset[str]:
     """Hint ranking only among already authorized, eligible documents."""
     allowed_ids = {document.document_id for document in _eligible(documents, as_of)}
-    query = tokens(question)
+    query = query_tokens(question)
     matches: list[tuple[int, set[str]]] = []
     for area in hypercontext()["areas"]:
         for topic in area["topics"]:

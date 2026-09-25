@@ -6,6 +6,7 @@ import hashlib
 import re
 from dataclasses import asdict, dataclass
 from datetime import date
+from difflib import SequenceMatcher
 
 from .access import Catalog, Document
 
@@ -81,7 +82,47 @@ ALIASES = {
     "systems": "system",
     "requests": "request",
     "gets": "get",
+    "absence": "leave",
+    "renew": "renewal",
+    "renewing": "renewal",
 }
+
+# Static navigation vocabulary only. It contains no words mined from inaccessible
+# documents, so typo correction cannot make restricted content affect retrieval.
+QUERY_VOCABULARY = frozenset(ALIASES) | frozenset(
+    {
+        "vendor",
+        "approval",
+        "onboarding",
+        "procurement",
+        "renewal",
+        "lawyer",
+        "legal",
+        "signature",
+        "standard",
+        "sla",
+        "response",
+        "service",
+        "nexaserve",
+        "contractual",
+        "contract",
+        "commit",
+        "leave",
+        "annual",
+        "sick",
+        "emergency",
+        "family",
+        "migration",
+        "legacy",
+        "investigation",
+        "case",
+        "request",
+        "manager",
+        "portal",
+        "schedule",
+        "security",
+    }
+)
 
 
 def tokens(text: str) -> set[str]:
@@ -90,6 +131,34 @@ def tokens(text: str) -> set[str]:
         for word in re.findall(r"[a-z0-9]+", text.lower())
         if word not in STOP
     }
+
+
+def query_tokens(text: str) -> set[str]:
+    """Conservatively correct long query terms for navigation, never source text or IDs."""
+    result = set()
+    for word in re.findall(r"[a-z0-9]+", text.lower()):
+        if word in STOP:
+            continue
+        if word in QUERY_VOCABULARY or len(word) < 5 or any(c.isdigit() for c in word):
+            result.add(ALIASES.get(word, word))
+            continue
+        matches = sorted(
+            (
+                (SequenceMatcher(None, word, candidate).ratio(), candidate)
+                for candidate in QUERY_VOCABULARY
+                if abs(len(word) - len(candidate)) <= 2
+            ),
+            reverse=True,
+        )
+        if (
+            matches
+            and matches[0][0] >= 0.82
+            and (len(matches) == 1 or matches[0][0] - matches[1][0] >= 0.08)
+        ):
+            result.add(ALIASES.get(matches[0][1], matches[0][1]))
+        else:
+            result.add(word)
+    return result
 
 
 def grams(words: set[str]) -> set[str]:
@@ -165,7 +234,7 @@ def rank(
     as_of: date,
     topic_document_ids: frozenset[str] = frozenset(),
 ) -> list[dict]:
-    query = tokens(question)
+    query = query_tokens(question)
     if not query:
         return []
     query_grams = grams(query)

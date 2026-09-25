@@ -40,7 +40,7 @@ Open PowerShell in this folder and run:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The first command tests ten business cases and writes `evaluation/results/latest.json` and `latest.md`. A critical failure gives a nonzero exit code. The latest checked run passed all ten cases and 74 tests. `passed: true` is **not** the same as `submission_ready: true`; candidate review, an unseen variation, the recording, and reviewer-access checks remain. See the [evaluation contract](evaluation/README.md) and [safety checkpoints](evaluation/safety-checkpoints.md).
+The first command tests ten business cases and writes `evaluation/results/latest.json` and `latest.md`. A critical failure gives a nonzero exit code. The latest checked run passed all ten cases and 83 tests, including unseen wording and spelling mistakes. Answers remain evidence-grounded extracts, not free-form AI summaries. `passed: true` is **not** the same as `submission_ready: true`; candidate review, the recording, and reviewer-access checks remain. See the [evaluation contract](evaluation/README.md) and [safety checkpoints](evaluation/safety-checkpoints.md).
 
 For a command-line question instead of the browser:
 
