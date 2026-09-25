@@ -265,6 +265,13 @@ hash-registered; no assessment data was edited. The candidate should review
 the distinction between deterministic evidence answers and true model-written
 summaries. Validation: 83 tests, all ten full evaluation cases, and Ruff checks.
 
+September 25, 2026 — Codex added a bounded conversational handler for
+greetings, help, and thanks. This is application-owned text, not document
+evidence or an LLM output. Identity validation precedes it; mixed prompts
+continue through authorized retrieval; the final verifier rejects any altered
+small-talk reply. Focused, full-suite, and end-to-end evaluation checks were
+used to guard the existing assessment behavior.
+
 For each substantially assisted artifact, record:
 
 1. The tool used.

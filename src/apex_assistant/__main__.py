@@ -60,6 +60,7 @@ def main() -> int:
             "evidence_found",
             "answered",
             "answered_with_warning",
+            "small_talk",
             "insufficient_evidence",
             "no_authorized_evidence",
         }

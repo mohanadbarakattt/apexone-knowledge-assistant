@@ -40,7 +40,7 @@ Open PowerShell in this folder and run:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The first command tests ten business cases and writes `evaluation/results/latest.json` and `latest.md`. A critical failure gives a nonzero exit code. The latest checked run passed all ten cases and 83 tests, including unseen wording and spelling mistakes. Answers remain evidence-grounded extracts, not free-form AI summaries. `passed: true` is **not** the same as `submission_ready: true`; candidate review, the recording, and reviewer-access checks remain. See the [evaluation contract](evaluation/README.md) and [safety checkpoints](evaluation/safety-checkpoints.md).
+The first command tests ten business cases and writes `evaluation/results/latest.json` and `latest.md`. A critical failure gives a nonzero exit code. The latest checked run passed all ten cases and 96 tests, including unseen wording, spelling mistakes, and greetings. Business answers remain evidence-grounded extracts, not free-form AI summaries. `passed: true` is **not** the same as `submission_ready: true`; candidate review, the recording, and reviewer-access checks remain. See the [evaluation contract](evaluation/README.md) and [safety checkpoints](evaluation/safety-checkpoints.md).
 
 For a command-line question instead of the browser:
 
@@ -57,6 +57,7 @@ Check employee → allow documents → search current evidence → verify claims
 - **Permission first:** documents the employee cannot use never enter search or ranking. An unavailable response does not reveal whether a private file exists.
 - **Evidence first:** important claims come from reviewed, authorized source lines; the final check verifies citations. Current policy outranks retired policy, and a missing contractual SLA is never invented.
 - **Safe documents:** instructions embedded in a document cannot change app rules or permissions. The trusted hypercontext file helps navigation but is not a source of business facts or access rights.
+- **Conversational basics:** short greetings, help requests, and thanks receive a simple response. A greeting attached to a real question still uses the authorized, cited answer path.
 
 The app reads `data/assessment/normalized/corpus.jsonl` and its trusted manifest/access files. Original PDF/DOCX files are reference material and are not parsed at runtime. The [simple process model](docs/process-model.md) and [decision records](docs/decisions/) explain the boundaries and alternatives. The main limitation is narrower language coverage than a carefully verified model-assisted system; reviewed evidence also needs reapproval when source text changes. Citations point to normalized text lines, not PDF pages.
 

@@ -3,7 +3,7 @@
   "purpose": "Trusted topic hints and output contract; never document permissions or business evidence.",
   "response_contract": {
     "required_fields": ["state", "answer", "notice", "claims", "citations", "diagnostics"],
-    "allowed_states": ["answered", "answered_with_warning", "insufficient_evidence", "conflicting_evidence", "no_authorized_evidence", "identity_denied", "invalid_request"],
+    "allowed_states": ["answered", "answered_with_warning", "insufficient_evidence", "conflicting_evidence", "no_authorized_evidence", "identity_denied", "invalid_request", "small_talk"],
     "claim_format": "exact_authorized_normalized_span",
     "citation_format": "document@version:Lstart-Lend:sha256-12",
     "answer_format": "optional_notice_then_plain_text_claim_bullets",

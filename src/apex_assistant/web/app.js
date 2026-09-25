@@ -18,6 +18,7 @@ let sourceRequest = 0;
 const STATE_LABELS = {
   answered: "Supported answer",
   answered_with_warning: "Answer with source warning",
+  small_talk: "Assistant",
   insufficient_evidence: "Not enough supporting information",
   conflicting_evidence: "Sources need owner review",
   no_authorized_evidence: "No accessible information for this employee",
@@ -102,7 +103,7 @@ function renderAnswer(target, result, selectedUser, requestGeneration) {
   const state = document.createElement("div");
   state.className = "answer-state";
   state.textContent = STATE_LABELS[result.state] || "Response unavailable";
-  if (!["answered", "answered_with_warning"].includes(result.state)) {
+  if (!["answered", "answered_with_warning", "small_talk"].includes(result.state)) {
     state.classList.add("answer-state-caution");
   }
   target.append(state);

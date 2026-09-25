@@ -23,6 +23,7 @@ ALLOWED_RESPONSE_STATES = frozenset(
         "no_authorized_evidence",
         "identity_denied",
         "invalid_request",
+        "small_talk",
     }
 )
 REQUIRED_SAFETY_RULES = {

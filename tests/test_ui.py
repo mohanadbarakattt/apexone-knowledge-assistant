@@ -73,6 +73,18 @@ def test_ui_http_denial_and_missing_sla(server):
     assert missing["sources"][0]["document_id"] == "APX-LEG-CON-NS-2026"
 
 
+def test_ui_http_greeting_and_mixed_question(server):
+    greeting = post(server, "u-eng-104", "Hello there!")
+    assert greeting["state"] == "small_talk"
+    assert greeting["claims"] == greeting["sources"] == []
+    mixed = post(server, "u-proc-310", "Hi, can you summarize vendor approval?")
+    assert mixed["state"] == "answered"
+    assert {source["document_id"] for source in mixed["sources"]} == {
+        "APX-PROC-POL-014",
+        "APX-PROC-MTX-006",
+    }
+
+
 def test_failure_messages_are_actionable_without_source_enumeration(server):
     restricted = post(server, "u-eng-104", "What is the status of case APX-HR-CASE-778?")
     nonexistent = post(server, "u-eng-104", "What is the status of case APX-HR-CASE-999?")

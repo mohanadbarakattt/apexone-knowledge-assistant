@@ -7,6 +7,7 @@ import re
 from datetime import date
 
 from .access import Catalog, Document
+from .conversation import SMALL_TALK, conversation
 from .retrieval import query_tokens, retrieve, tokens
 from .reviewed import is_approved
 from .safety import verify_answer
@@ -146,15 +147,18 @@ def _safe(state: str, message: str) -> dict:
 def _compose_answer(
     catalog: Catalog, user_id: str, question: str, as_of: date | None = None
 ) -> dict:
-    found = retrieve(catalog, user_id, question, limit=20, as_of=as_of)
-    if found["state"] == "identity_denied":
+    if not catalog.known_user(user_id):
         return _safe("identity_denied", "This employee identity is not recognized.")
-    if found["state"] == "invalid_request":
+    if not question.strip() or len(question) > 4000:
         return _safe("invalid_request", "Enter a non-empty question of at most 4,000 characters.")
+    search_question, conversational_reply = conversation(question)
+    if conversational_reply is not None:
+        return _safe("small_talk", SMALL_TALK[conversational_reply])
+    found = retrieve(catalog, user_id, search_question, limit=20, as_of=as_of)
     if found["state"] == "no_authorized_evidence":
         return _safe("no_authorized_evidence", NO_AVAILABLE_EVIDENCE)
 
-    intent = _intent(question)
+    intent = _intent(search_question)
     # A retrieved document must also be present in the trusted authorized view.
     retrieved = {(item["document_id"], item["version"]) for item in found["evidence"]}
     visible = tuple(
@@ -240,7 +244,7 @@ def _compose_answer(
         policy = _source(visible, "employee", "leave", "policy")
         if policy is None:
             return _safe("insufficient_evidence", "The general leave policy is unavailable.")
-        words = query_tokens(question)
+        words = query_tokens(search_question)
         if "sick" in words:
             selected = [_claim(policy, _line(policy, "Employees should notify their manager"))]
         elif {"emergency", "family"} & words:

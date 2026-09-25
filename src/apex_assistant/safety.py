@@ -7,6 +7,7 @@ from datetime import date
 
 from .access import Catalog, Document
 from .context import ELIGIBLE_STATUSES, hypercontext
+from .conversation import SMALL_TALK
 from .reviewed import is_approved
 
 SOURCE_FIELDS = frozenset(
@@ -82,6 +83,13 @@ def verify_answer(catalog: Catalog, user_id: str, result: dict, as_of: date | No
         return False
     if not catalog.known_user(user_id) and state != "identity_denied":
         return False
+    if state == "small_talk":
+        return (
+            not claims
+            and not citations
+            and notice is None
+            and result["answer"] in SMALL_TALK.values()
+        )
     if not claims:
         return (
             not citations and notice is None and state not in {"answered", "answered_with_warning"}
