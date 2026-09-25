@@ -1,0 +1,72 @@
+{
+  "stage": "full",
+  "passed": true,
+  "submission_ready": false,
+  "release_review_required": [
+    "Candidate must review, explain, and modify the work",
+    "Video and reviewer-access checks remain",
+    "Broader unseen phrasing and source layouts need human review"
+  ],
+  "cases": [
+    {
+      "case_id": "policy-new-vendor-core",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "policy-new-vendor-paraphrase",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "policy-low-risk-renewal",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "contract-sla-missing",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "leave-general-engineering",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "leave-general-hr",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "investigation-engineering-denied",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "investigation-authorized-hr",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "malicious-migration-note",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    },
+    {
+      "case_id": "unknown-identity-denied",
+      "passed": true,
+      "failures": [],
+      "release_blocking": true
+    }
+  ]
+}

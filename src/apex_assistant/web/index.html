@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kentrick.ai · ApexOne Knowledge Assistant</title>
+    <!-- Adapted from Start Bootstrap Simple Sidebar v6.0.6 (MIT). -->
+    <link href="/styles.css" rel="stylesheet">
+    <link href="/app.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="d-flex app-shell" id="wrapper">
+      <aside id="sidebar-wrapper" aria-label="Knowledge navigation">
+        <div class="brand-row">
+          <div class="brand-mark" aria-hidden="true">K<span>✦</span></div>
+          <div><div class="brand-name">KENTRICK</div><div class="brand-subtitle">ApexOne knowledge demo</div></div>
+        </div>
+        <div class="sidebar-inner">
+          <button class="new-chat" type="button" id="new-chat"><span aria-hidden="true">＋</span> New question</button>
+          <div class="sidebar-eyebrow">Explore knowledge</div>
+          <p class="sidebar-help">Topics and files shown here follow the selected employee's access.</p>
+          <div id="topic-tree" class="topic-tree" aria-live="polite">Loading available topics…</div>
+        </div>
+        <div class="sidebar-bottom">
+          <div class="status-dot" aria-hidden="true"></div>
+          <div><strong>Kentrick.ai assessment</strong><small>Runs on this computer only</small></div>
+        </div>
+      </aside>
+
+      <div id="page-content-wrapper" class="app-main">
+        <header class="topbar">
+          <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle navigation">☰</button>
+          <div class="topbar-title"><strong>ApexOne Knowledge Assistant</strong><span>Evidence-first answers · Kentrick.ai demo</span></div>
+          <div class="identity-control">
+            <label for="identity">Ask as</label>
+            <select id="identity" class="form-select form-select-sm" aria-label="Demo employee">
+              <!--IDENTITIES-->
+            </select>
+          </div>
+        </header>
+
+        <main class="chat-layout">
+          <div class="chat-scroll" id="messages" role="log" aria-live="polite">
+            <section id="empty" class="welcome">
+              <div class="welcome-mark" aria-hidden="true">K<span>✦</span></div>
+              <div class="eyebrow">YOUR COMPANY KNOWLEDGE, WITH PROOF</div>
+              <h1>What can I help you find?</h1>
+              <p>Ask about policies, contracts, or processes. Every supported answer points back to an authorized source.</p>
+              <div class="welcome-steps" aria-label="How answers are made">
+                <span>01 · Check access</span><span>02 · Find evidence</span><span>03 · Show sources</span>
+              </div>
+            </section>
+          </div>
+
+          <div class="composer-wrap">
+            <div class="demo-warning" role="note">
+              <span aria-hidden="true">ⓘ</span>
+              <span>The employee selector is a simulation, <strong>not authentication</strong>. Do not enter real confidential data or expose this local UI to a network.</span>
+            </div>
+            <form id="ask-form" class="composer">
+              <label for="question" class="visually-hidden">Your question</label>
+              <textarea id="question" rows="2" maxlength="4000" placeholder="Ask a question about company knowledge…" required></textarea>
+              <button id="ask-button" type="submit" aria-label="Ask question">➤</button>
+            </form>
+            <p class="composer-note">Each question is independent. Earlier messages are not used as evidence.</p>
+          </div>
+        </main>
+      </div>
+    </div>
+    <dialog id="source-dialog" class="source-dialog" aria-labelledby="source-title">
+      <div class="source-dialog-head">
+        <div>
+          <div class="sidebar-eyebrow">AUTHORIZED SOURCE · NORMALIZED TEXT</div>
+          <h2 id="source-title">Source</h2>
+          <p id="source-meta"></p>
+        </div>
+        <button id="source-close" type="button" aria-label="Close source">✕</button>
+      </div>
+      <div id="source-lines" class="source-lines"></div>
+    </dialog>
+    <script src="/template.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
