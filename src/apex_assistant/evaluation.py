@@ -9,6 +9,10 @@ from .access import Catalog
 from .assistant import answer
 from .retrieval import retrieve
 
+REQUIRED_FAMILIES = frozenset(
+    {"policy_authority", "unsupported_sla", "authorization", "malicious_document"}
+)
+
 CONCEPTS = {
     "current_policy_v3": (r"vendor is treated as an enterprise vendor",),
     "intake_due_diligence_security_finance_legal_finalization": (
@@ -159,12 +163,18 @@ def evaluate_full(catalog: Catalog, cases: list[dict]) -> dict:
                 "release_blocking": case["release_blocking"],
             }
         )
-    passed = any(row["release_blocking"] for row in results) and all(
-        not row["failures"] for row in results if row["release_blocking"]
-    )
+    suite_failures = [
+        f"missing_required_family:{family}"
+        for family in sorted(REQUIRED_FAMILIES - {case.get("family") for case in cases})
+    ]
+    if not any(row["release_blocking"] for row in results):
+        suite_failures.append("no_release_blocking_cases")
+    # A metadata mistake must not turn a failing business safeguard green.
+    passed = not suite_failures and all(row["passed"] for row in results)
     return {
         "stage": "full",
         "passed": passed,
+        "suite_failures": suite_failures,
         "submission_ready": False,
         "release_review_required": [
             "Candidate must review, explain, and modify the work",
@@ -234,7 +244,7 @@ def write_report(report: dict, output: Path) -> None:
         if stem == "build1"
         else "Release-blocking behavior and answer properties.",
         "",
-        "| Case | Retrieval checks |",
+        "| Case | Checks |",
         "|---|---|",
     ]
     for row in report["cases"]:
@@ -242,5 +252,7 @@ def write_report(report: dict, output: Path) -> None:
         lines.append(f"| {row['case_id']} | {outcome} |")
     if "not_evaluated" in report:
         lines += ["", "Not evaluated: " + "; ".join(report["not_evaluated"]) + "."]
+    if report.get("suite_failures"):
+        lines += ["", "Suite failures: " + "; ".join(report["suite_failures"]) + "."]
     lines += ["", f"Overall: {'PASS' if report['passed'] else 'FAIL'}", ""]
     (output / f"{stem}.md").write_text("\n".join(lines), encoding="utf-8")

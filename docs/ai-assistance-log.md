@@ -1,5 +1,14 @@
 # AI Assistance Log
 
+September 26 requirements audit: Codex compared the new brief with the earlier
+weighted listing, added a requirements/evidence review, clarified grading
+provenance and README disclosure/configuration, and tightened the evaluator
+against failed non-blocking cases and missing mandatory families. Azure design
+changes name the eligibility store, reserve latency headroom and document the
+mixed-index scoring isolation risk. No cloud service was deployed. Candidate
+ownership, video content and anonymous reviewer access are not certified by
+these automated checks.
+
 This log records substantial Codex assistance as the work occurs. The final README will summarize the material entries.
 
 | Date | Artifact | Codex contribution | Logic retained | Candidate review or change | Validation |

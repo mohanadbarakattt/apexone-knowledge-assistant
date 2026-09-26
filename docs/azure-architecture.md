@@ -29,11 +29,12 @@ flowchart LR
   U[Employee] -->|Entra token| AG[Application Gateway WAF]
   AG --> APP[Azure Container Apps API]
   APP -->|trusted identity and groups| AUTH[Authorization policy]
-  AUTH -->|mandatory ACL filter| SI[(AI Search internal index)]
-  AUTH -->|separate permitted route| SR[(AI Search restricted HR index)]
+  AUTH --> PRE[Read live eligibility from Azure Cosmos DB]
+  PRE -->|mandatory ACL and revision filter| SI[(AI Search internal access-cohort indexes)]
+  PRE -->|separate permitted route| SR[(AI Search restricted HR access-cohort indexes)]
   SI --> R[Authority and sufficiency checks]
   SR --> R
-  R -->|revocation and version recheck| EL[(Trusted eligibility state)]
+  R -->|revocation and version recheck| EL[(Azure Cosmos DB: eligibility and review state)]
   EL -->|current approved spans only| REV[Reviewed evidence gate]
   REV -->|bounded evidence IDs and spans| AO[Regional Azure OpenAI: select IDs]
   AO --> V[Application validates IDs; rechecks access; renders exact claims and citations]
@@ -69,7 +70,8 @@ and authorized source IDs; they exclude questions, excerpts and restricted metad
 | Application Gateway WAF v2 | Regional ingress and web attack protection without a global edge | Front Door offers global edge/failover but is incompatible with an unqualified single-region data-path promise |
 | API Management (later, if needed) | Centralized quotas, API versioning and policy for multiple consuming apps | Start with application validation and quotas for one API; add APIM when governance justifies it |
 | Azure Container Apps | Autoscaling Python query API and background jobs without Kubernetes operations | App Service is simpler for steady web workloads; AKS gives control at much higher operating cost |
-| Azure AI Search | Hybrid keyword/vector retrieval, filters, semantic ranking and source fields | Separate databases plus vector extensions add query/operations work; preview native ACL features are deferred |
+| Azure AI Search | Hybrid keyword/vector retrieval, filters, semantic ranking and source fields | Azure SQL Database with application-owned retrieval keeps relational control but adds ranking/indexing engineering; preview native ACL features are deferred |
+| Azure Cosmos DB for NoSQL, approved region | Trusted document eligibility, ACL epochs, current revisions and review records; strong consistency for authorization reads, fail closed if unavailable | Azure SQL Database is an Azure alternative when relational constraints and transactions dominate; Cosmos RU cost and partition design need measurement |
 | Separate restricted Search index | Physical defense in depth for HR investigation content | One filtered index is cheaper; a filter defect has a larger blast radius |
 | Azure OpenAI regional deployment | Optional evidence-ID selection after authorization, sufficiency and review; validate exact processing location | Keep deterministic composition if quality and coverage suffice; permit free phrasing only after independent entailment validation |
 | Azure AI Content Safety (optional) | Prompt/jailbreak signal where risk testing shows value | Start with structural isolation and built-in model safety controls; a classifier cannot replace either |
@@ -122,10 +124,15 @@ provide FIFO ordering when it is actually needed.
 
 ## Scale latency reliability and cost
 
-The 60,000-document, 180-GB estate is modest for a partitioned Search deployment; size the SKU
-from measured index size and query load, then scale replicas for 20 peak requests per second and
-availability. Load tests allocate a six-second p95 budget: edge/API 300 ms, identity/policy 300 ms,
-Search 1.2 s, authority/reranking 500 ms, model 3.2 s and verification/serialization 500 ms.
+Size the Search SKU from measured index expansion, chunk counts and query load for
+60,000 documents / 180 GB and 5,000 employees, then test replicas at 20 peak
+requests per second while processing approximately 200 daily content changes.
+The source estate size alone is not a capacity estimate. Proposed stage deadlines
+total 5.5 seconds: edge/API 250 ms, identity/policy 250 ms, Search 1.0 s,
+authority/reranking 500 ms, model 3.0 s and verification/serialization 500 ms.
+This leaves 500 ms against the required end-to-end p95 below six seconds.
+Stage deadlines are an allocation, not a measured p95 or an additive percentile proof;
+load-test the whole request path, including queueing, before claiming the SLO.
 Timeouts are shorter than the remaining request budget. A high-risk request returns a safe
 dependency-unavailable response if authorization, Search or verification fails; it does not fall
 back to an unfiltered query or ungrounded model answer.
@@ -170,6 +177,22 @@ compare permission-consistent outcomes, and promote traffic only after source ow
 collection. The local deterministic path remains a regression oracle and degraded-mode option.
 
 ## Remaining decisions
+
+The Cosmos DB eligibility store is read before retrieval to construct live eligible
+candidate filters and again before output; a post-search revocation check alone
+is insufficient for the no-influence requirement. Use strong reads without a stale
+authorization cache, reject revision races, and fail closed on store outages.
+See Microsoft's [consistency choices](https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels).
+
+Security filters do not by themselves prove zero ranking influence: BM25 uses
+index statistics, so denied documents in a mixed-access index may affect scores.
+This is a production design constraint, not a proven guarantee of this prototype.
+Before launch, partition search by access-equivalent collections and validate
+candidate selection and ordering with denied-content mutation tests; disable a
+collection during security-sensitive rebuilds if isolation cannot be preserved.
+Arbitrary overlapping ACLs, index fan-out and freshness must be benchmarked;
+do not launch a collection that fails either isolation or latency acceptance.
+Microsoft describes the [statistics used by Search scoring](https://learn.microsoft.com/en-us/azure/search/index-similarity-and-scoring).
 
 Confirm the approved region and paired-region policy, source systems and ACL semantics, retention
 requirements, Search SKU/load-test results, model deployment availability, recovery objectives,

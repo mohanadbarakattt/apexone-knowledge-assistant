@@ -16,7 +16,10 @@ inject an impossible required source to verify the failure path and process exit
 
 Run `python -m apex_assistant evaluate --stage full`. The command writes
 `results/latest.json` and `results/latest.md` and exits nonzero when a release-blocking
-case fails. It evaluates response state, source inclusion/exclusion, independent answer
+case fails. Any failed case now blocks the overall result even if accidentally
+labelled non-blocking; all four required families must be present and at least
+one case must be marked release-blocking. Suite-level failures are reported in
+`suite_failures`. It evaluates response state, source inclusion/exclusion, independent answer
 text properties and claim citation references. Passing the fixed suite is necessary but
 does not replace unseen variations, candidate review or production evaluation.
 The reviewed-span gate is checked separately in adversarial unit tests; ten

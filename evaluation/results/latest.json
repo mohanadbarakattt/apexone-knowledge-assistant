@@ -1,6 +1,7 @@
 {
   "stage": "full",
   "passed": true,
+  "suite_failures": [],
   "submission_ready": false,
   "release_review_required": [
     "Candidate must review, explain, and modify the work",

@@ -98,7 +98,7 @@ dependencies, not completed features of the local app.
 |---|---|---|
 | Entra ID + query API | Authenticate, resolve trusted groups, enforce application policy | Trust a user-supplied employee label as authentication |
 | Azure AI Search | Lexical retrieval first; optionally hybrid/vector later with mandatory security prefilter | Search or rank denied content and filter it only afterward |
-| Trusted eligibility/review store | Track current revision, revocation and approved evidence | Derive permission or approval from document instructions |
+| Azure Cosmos DB for NoSQL eligibility/review store | Strongly read current revision, revocation and approved evidence before search and before output | Derive permission or approval from document instructions or serve a stale authorization cache |
 | Regional Azure OpenAI deployment | Select relevant evidence IDs from an already safe packet | Directly search, call tools, create citations or decide permissions |
 | Application output gate | Validate IDs, recheck access, render exact claims/citations, abstain on failure | Treat structured model output as evidence |
 

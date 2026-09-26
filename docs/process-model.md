@@ -121,10 +121,10 @@ The fixed evaluator covers the four mandatory incident families and currently
 passes ten cases. It is a regression gate, not proof that arbitrary future
 questions or source layouts will work. The current report intentionally says
 `submission_ready: false` until human gates are complete.
-The evaluator's `passed` flag joins only cases marked `release_blocking`; a
-failure in a non-blocking case is still reported but does not flip that flag.
-All ten committed cases are release-blocking. This behavior is a limitation
-to review if the suite grows, not a claim that every reported failure blocks.
+The full evaluator's `passed` flag requires every case to pass, all four
+mandatory families to be present, and at least one declared release blocker.
+A failed case cannot be hidden by marking it non-blocking. All ten committed
+cases are release-blocking; missing families appear as suite-level failures.
 
 The UI's per-employee topic/file tree and its non-authoritative search hints are
 explained in `docs/hypercontext-and-ui.md`. The topic map does not change the

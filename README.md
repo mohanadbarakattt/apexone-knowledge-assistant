@@ -33,7 +33,7 @@ To run the automated checks from this folder:
 
 .\.venv\Scripts\python.exe -m pytest -q
 
-Last checked: all 10 assessment cases and 96 automated tests passed. A passing test report does not prove the app can answer every question. Business answers are reviewed source extracts, not model-written summaries.
+Last checked: all 10 assessment cases and 98 automated tests passed. A failed case or missing mandatory family blocks the full evaluation result. A passing test report does not prove the app can answer every question. Business answers are reviewed source extracts, not model-written summaries.
 
 HOW THE DECISION WORKS
 
@@ -68,7 +68,19 @@ docs/process-model.md explains the full decision flow; docs/azure-architecture.m
 
 No AI model or agent runs in this local app. It works on a CPU without Azure or paid APIs. It handles supported topics, common paraphrases, some typos, and basic greetings, but it does not provide open-ended AI conversation. Citations refer to normalized text lines, not PDF page numbers. Source changes require review before new passages can be used as claims.
 
-Codex substantially assisted the implementation, testing, and documentation. The work and its limits are recorded in docs/ai-assistance-log.md. Reviewer access to the video should be checked in a private browser window.
+REQUIREMENTS, CONFIGURATION AND DECISIONS
+
+The evidence checklist and grading priorities are in docs/requirements-review.md and docs/rubric.md. The local model is optional under the brief; extra UI or AI features do not earn credit by themselves.
+
+Default data is data/assessment. The CLI and UI accept --data-dir for a trusted local pack; the UI also accepts --port. Do not expose these choices as remote request parameters. The bundled hypercontext.json supplies navigation/output rules, and approved_spans.json lists reviewed evidence hashes. Neither file grants document access. No API keys or cloud configuration are needed.
+
+Setup downloads Python packaging tools (including setuptools) and the pytest/Ruff development dependencies; it downloads no model weights. Deterministic retrieval was chosen for CPU cost, reproducibility and inspectable claims. A local LLM adds download size and latency; a cloud LLM would violate the assessed local path. The reviewed-span approach limits answer coverage and requires review after source changes.
+
+AI ASSISTANCE
+
+Codex substantially generated or edited the Python core, UI, tests, evaluator, Azure diagrams/design and documentation. Grok Bot supplied adversarial review. The retained logic is authorization before search, reviewed evidence, final citation checks and safe abstention. Changes included replacing a bypassable directive filter with exact reviewed spans, fixing typo/leave routing, and strengthening release gates. Validation used unit and adversarial tests, full evaluation, source/citation checks and linting. This note does not claim that the candidate has personally completed every review or can defend every artifact; the interview must establish that. Details are in docs/ai-assistance-log.md.
+
+Reviewer access to the video should be checked in a private browser window. The video must trace both an Azure employee request and a content change, not only discuss adding a model.
 
 TEST PACK — SELECT THE EMPLOYEE, THEN COPY THE QUESTION
 

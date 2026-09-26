@@ -2,7 +2,7 @@
 
 Release-blocking behavior and answer properties.
 
-| Case | Retrieval checks |
+| Case | Checks |
 |---|---|
 | policy-new-vendor-core | PASS |
 | policy-new-vendor-paraphrase | PASS |

@@ -54,6 +54,21 @@ def test_evaluator_requires_a_release_blocking_case(catalog):
     assert not report["passed"]
 
 
+def test_failing_nonblocking_case_cannot_hide_behind_overall_pass(catalog):
+    test_cases = cases()
+    test_cases[0]["release_blocking"] = False
+    test_cases[0]["expected_outcome"] = "identity_denied"
+    report = evaluate_full(catalog, test_cases)
+    assert not report["passed"]
+    assert "outcome_mismatch" in report["cases"][0]["failures"]
+
+
+def test_missing_required_family_blocks_full_evaluation(catalog):
+    report = evaluate_full(catalog, [c for c in cases() if c["family"] != "malicious_document"])
+    assert not report["passed"]
+    assert "missing_required_family:malicious_document" in report["suite_failures"]
+
+
 @pytest.mark.parametrize(
     "question",
     [
@@ -146,6 +161,7 @@ def test_full_evaluation_cli_and_failure_code(tmp_path):
     )
     assert passed.returncode == 0 and json.loads(passed.stdout)["passed"]
     broken = cases()
+    broken[0]["release_blocking"] = False
     broken[0]["required_concepts"].append("unknown_required_property")
     path = tmp_path / "broken.jsonl"
     path.write_text("\n".join(json.dumps(item) for item in broken), encoding="utf-8")
