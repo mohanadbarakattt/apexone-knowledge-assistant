@@ -2,18 +2,23 @@
 
 ## Decision summary
 
-The production design keeps authorization ahead of retrieval and uses Azure AI Search
-security filters as the stable document-level control. Microsoft Entra ID authenticates
-employees; the application resolves trusted group IDs and sends them as mandatory search
-filters. Restricted HR content uses a separate index and query path as defense in depth.
+The production design keeps authorization ahead of retrieval. Microsoft Entra ID authenticates
+employees; the application resolves trusted group IDs and constructs mandatory Azure AI Search
+security filters. Filters are one document-level control, **not** proof that inaccessible content
+cannot affect ranking. Only access-equivalent collections may be searched: every document in a
+collection must be visible to every principal routed to it. Restricted HR content uses separate
+collections and a separate query path as defense in depth.
 Preview ACL-aware Search features are an upgrade option after production readiness review,
 not a dependency for launch.
 
-The data plane is designed for an approved Azure region: use regional Application Gateway
-WAF and a regional model deployment, not a global edge or Global/Data Zone model routing.
-Confirm the exact processing-location guarantee for the selected model and region before
-production; if it cannot meet the single-region rule, use an approved regional Azure ML
-serving option or do not launch model generation. Public network access is disabled on
+The proposed application data plane targets an approved Azure region: use regional Application
+Gateway WAF and a regional model deployment, not a global edge or Global/Data Zone model routing.
+This is a **deployment condition**, not a residency guarantee. Confirm storage, processing,
+replication, backups and telemetry location for each service and the existing Entra/source-system
+dependencies before production. If any dependency cannot meet the organization's strict
+single-region interpretation, obtain an explicit approved exception or do not launch that path.
+An approved regional Azure ML serving option is possible if Azure OpenAI cannot qualify, but it
+needs the same location proof. Public network access is disabled on
 data services where supported; workloads use managed identities and private endpoints.
 Only authorized excerpts reach Azure OpenAI. Retrieved document text is delimited as data,
 cannot define system instructions, and cannot invoke tools.
@@ -26,41 +31,68 @@ and [ADR 009](decisions/ADR-009-azure-model-boundary.md).
 
 ```mermaid
 flowchart LR
-  U[Employee] -->|Entra token| AG[Application Gateway WAF]
-  AG --> APP[Azure Container Apps API]
-  APP -->|trusted identity and groups| AUTH[Authorization policy]
-  AUTH --> PRE[Read live eligibility from Azure Cosmos DB]
-  PRE -->|mandatory ACL and revision filter| SI[(AI Search internal access-cohort indexes)]
-  PRE -->|separate permitted route| SR[(AI Search restricted HR access-cohort indexes)]
-  SI --> R[Authority and sufficiency checks]
+  subgraph EXTERNAL["Outside the proposed application data plane"]
+    U[Employee] --> ID[Existing Entra tenant]
+    SP[SharePoint and business sources]
+  end
+  subgraph REGION["Proposed approved-region data plane - residency validation required"]
+    AG[Application Gateway WAF]
+    subgraph POLICY["Trust boundary 1: API owns identity, authorization and routing"]
+      APP[Container Apps API] --> AUTH[Validate token and trusted entitlements]
+      AUTH --> PRE[Read live eligibility and collection state]
+      SAFE[Safe denial or dependency response]
+      R[Authority and sufficiency checks]
+      REV[Reviewed evidence gate]
+      V[Validate IDs; recheck access; render claims and citations]
+    end
+    EL[(Cosmos DB: eligibility, revocation and review state)]
+    subgraph SEARCH["Trust boundary 2: rank only access-equivalent collections"]
+      SI[(AI Search internal collections)]
+      SR[(AI Search restricted HR collections)]
+    end
+    subgraph MODEL["Trust boundary 3: approved evidence only"]
+      AO[Regional Azure OpenAI: select evidence IDs]
+    end
+    subgraph INGEST["Untrusted source content - validate before serving"]
+      AD[Container Apps source adapter] --> SB[Service Bus]
+      SB --> ING[Container Apps Jobs ingestion]
+      ING --> B[(Blob Storage versioned source)]
+      ING --> ACL[Validate owner, ACL, status and revision]
+      ACL --> OWNER[Source-owner span approval]
+      ING --> Q[Dead letter and quarantine]
+    end
+    MON[Regional Application Insights and Log Analytics: sanitized events]
+  end
+  ID -->|validated token| AG --> APP
+  AUTH -->|unknown or denied| SAFE
+  PRE -->|no safe collection or store failure| SAFE
+  PRE -->|live scope| EL
+  EL -->|eligible internal route| SI
+  EL -->|eligible restricted route| SR
+  SI --> R
   SR --> R
-  R -->|revocation and version recheck| EL[(Azure Cosmos DB: eligibility and review state)]
-  EL -->|current approved spans only| REV[Reviewed evidence gate]
-  REV -->|bounded evidence IDs and spans| AO[Regional Azure OpenAI: select IDs]
-  AO --> V[Application validates IDs; rechecks access; renders exact claims and citations]
-  V --> APP
-  APP --> AG
-  APP --> MON[Application Insights and Log Analytics]
-
-  SP[SharePoint and business sources] -->|webhook, change feed or scheduled poll| AD[Container Apps source adapter]
-  AD --> SB[Service Bus]
-  SB --> ING[Container Apps Jobs ingestion]
-  ING --> B[(Blob Storage versioned source)]
-  ING --> ACL[ACL and metadata validation]
-  ACL -->|immediate revocation state| EL
-  ACL -->|propose changed evidence| OWNER[Source-owner approval workflow]
-  OWNER -->|approved revisions and spans only| REV
-  ACL -->|valid current chunks| SI
-  ACL -->|restricted collection| SR
-  ING --> Q[Dead letter and quarantine]
+  R -->|recheck current revision and access| EL
+  EL -->|eligible reviewed spans| REV
+  REV -->|missing or conflicting| SAFE
+  REV -->|bounded IDs and spans| AO --> V --> APP
+  SAFE --> APP --> AG
+  APP -->|outcome and latency only| MON
+  SP -->|change event or poll| AD
+  ACL -->|revocation or retirement blocks collection before acknowledgement| EL
+  OWNER -->|approved review state| EL
+  ACL -->|validated current chunks| SI
+  ACL -->|validated restricted chunks| SR
 ```
 
-The trust boundary sits before Search. A caller cannot supply groups, filters, index names,
+The diagram's regions are trust boundaries, not claims that the existing Entra tenant or
+SharePoint sources reside in the chosen Azure region. A caller cannot supply groups, filters, index names,
 system prompts or data locations. The API derives identity from the validated Entra token,
 loads authorization policy from trusted configuration, chooses the permitted index, and
 constructs the filter. Search results are treated as untrusted evidence even after access
-control. Logs record request IDs, outcome categories, latency, model/search deployment IDs,
-and authorized source IDs; they exclude questions, excerpts and restricted metadata by default.
+control. A safe response is returned before Search if no permitted, clean collection exists.
+Ordinary logs record request IDs, outcome categories, latency and deployment IDs; they exclude
+questions, excerpts, source identifiers and restricted metadata. Any source-level investigation
+requires a separately authorized, audited workflow, not ordinary application telemetry.
 
 ## Component map and tradeoffs
 
@@ -98,6 +130,47 @@ Model [deployment types](https://learn.microsoft.com/en-us/azure/ai-foundry/mode
 distinguish geography-based, data-zone and global processing; the exact approved-region
 guarantee still requires validation for the selected service and contract.
 
+## No-influence serving rule
+
+At collection admission, compute a trusted access-scope signature from source ACLs and
+current entitlements. A Search collection is queryable only when **all** its indexed chunks
+are permitted for **every** principal routed to that collection. The API may query multiple
+permitted collections, de-duplicate candidates and rerank those authorized candidates in
+application code; it must not compare raw BM25 scores across different indexes as though
+they were calibrated. An arbitrary overlapping ACL that cannot be mapped to a tested
+access-equivalent collection is excluded from the answerable search service for the first
+launch. It is not placed in a broader index and merely hidden by a result filter.
+
+Revocation, retirement or a group/ACL change can invalidate that signature while stale
+chunks remain indexed. Before acknowledging such a change, mark the affected collection
+unqueryable in the live eligibility store. Requests needing it receive a safe unavailable
+response until deletion/repartitioning and index-content verification finish; only then
+re-enable the collection. The pre-search eligibility read and final access recheck protect
+against races, while collection quarantine prevents stale content from influencing BM25
+statistics during cleanup. This sacrifices some availability rather than weaken the stated
+zero-influence requirement. Denied-content mutation tests must compare authorized candidate
+sets, ordering and sanitized output/telemetry before any collection is enabled.
+
+## Residency admission decision
+
+The requirement says services and data remain in an approved Azure **region**. A selected
+resource region alone is not proof of where a managed service processes, replicates or
+backs up every data type. The deployment owner must record a service-specific location
+decision before launch:
+
+| Dependency | Evidence needed before launch | If strict region compliance is unproven |
+|---|---|---|
+| Entra tenant and existing SharePoint/business sources | Tenant/source residency, token and metadata flow, and written scope or exception for pre-existing services | Do not claim these external dependencies are in the application region; obtain an approved exception or stop |
+| Azure AI Search, Blob, Cosmos DB, Service Bus and Key Vault | Storage, processing, replication, backups and feature-specific data movement for the selected configuration | Disable the nonconforming feature or do not launch the affected path |
+| Azure OpenAI or optional Azure ML model serving | Exact model, deployment type, processing location and logging terms | Use a qualifying regional option or keep model use disabled |
+| Application Insights and Log Analytics | Regional workspace, telemetry routing/retention and the sanitized event schema | Disable nonessential telemetry; do not send sensitive payloads to an unapproved location |
+
+Microsoft documents [Entra's geo-based residency model](https://learn.microsoft.com/en-us/entra/fundamentals/data-residency)
+and [Azure AI Search's geography-level data-residency terms](https://learn.microsoft.com/en-us/azure/search/search-security-built-in).
+Those are not automatically identical to this quest's single-region condition. If the
+organization interprets the condition literally and no compliant service configuration
+or written exception exists, the proposed architecture is **not approved for deployment**.
+
 ## Content lifecycle
 
 Each source change receives a stable business document ID, revision and event ID. Service Bus
@@ -109,9 +182,11 @@ Changed answerable spans are proposed for source-owner review; ingestion does no
 approve a span merely because it appears in source text. Unreviewed or changed
 spans may be searchable by an authorized user, but cannot become answer claims.
 Revision checks prevent an older event from restoring stale content. An ACL revocation or
-retirement immediately blocks the document in the authoritative eligibility store before index
-cleanup, and the query API rechecks that state before returning evidence. Deletion is verified
-before the change is considered complete. Poison events enter dead-letter/quarantine with alerts.
+retirement makes the affected access-equivalent collection unqueryable before the event is
+acknowledged, even if the Search index still contains stale chunks. The query API also rechecks
+document eligibility before returning evidence. Deletion/repartitioning and collection-content
+verification are required before serving resumes. Poison events enter dead-letter/quarantine
+with alerts.
 Build a separate inactive index generation and switch an alias for schema changes or bulk rebuilds,
 not for each of roughly 200 daily document changes. Alias propagation is not instantaneous, so
 retain the old index during the transition and test both paths.
@@ -137,8 +212,24 @@ Timeouts are shorter than the remaining request budget. A high-risk request retu
 dependency-unavailable response if authorization, Search or verification fails; it does not fall
 back to an unfiltered query or ungrounded model answer.
 
-Cache only permission-independent configuration and results keyed by authorization scope,
-index generation and question fingerprint. Autoscale API replicas on concurrent requests and
+### Proposed production acceptance checks (not measured results)
+
+| Gate | Launch test and proposed decision rule |
+|---|---|
+| Authorization and ranking isolation | Mutate denied text, titles and counts; unauthorized candidate sets, ordering, answer, citations and ordinary telemetry must remain unchanged. Any difference blocks launch. Repeat during ACL changes and index rebuilds. |
+| Revocation and retirement | Once a change event is accepted, no query may hit an affected dirty collection. Race and replay tests must show a safe response until physical cleanup and collection verification complete. Any stale hit or influence blocks launch. |
+| End-to-end experience | Load-test at 20 requests/second, a 5,000-employee entitlement distribution and concurrent 200-change/business-day ingestion against a production-shaped 60,000-document / 180-GB source estate. Measured end-to-end p95, including queueing, must be below 6 seconds. |
+| Ordinary content freshness | Proposed pilot target: approved changes searchable within 15 minutes after source-owner approval, measured at the stated change rate. Track source-to-approval delay separately; agree the business freshness SLO before launch. Misses beyond the approved SLO block rollout. |
+| Cost and reliability | Set an owner-approved monthly and per-answer budget before pilot; measure actual Search units, model tokens, ingestion and telemetry cost under load. Alert at 80% of the budget and block promotion above 100%. Dependency and regional-outage drills must return safe responses for high-risk requests. |
+
+The numbers above are design targets, not evidence of Azure performance. If the 15-minute
+freshness proposal or budget is unsuitable, the business owner must approve replacements
+before the launch gate is executable. No Azure load test has been run for this assessment.
+
+Cache only permission-independent configuration by default. If response caching is later
+justified, key it by authorization scope, ACL epoch, index generation and question fingerprint;
+invalidate it on entitlement or source changes, and prove denied-content non-influence before
+enabling it. Autoscale API replicas on concurrent requests and
 Service Bus workers on queue depth. Search replica/partition utilization, model token budgets,
 prompt/output caps and per-request cost are dashboarded. Use consumption-based compute where
 bursty, reservations after stable measurement, lifecycle tiers for old Blob versions, and separate
@@ -186,12 +277,10 @@ See Microsoft's [consistency choices](https://learn.microsoft.com/en-us/azure/co
 
 Security filters do not by themselves prove zero ranking influence: BM25 uses
 index statistics, so denied documents in a mixed-access index may affect scores.
-This is a production design constraint, not a proven guarantee of this prototype.
-Before launch, partition search by access-equivalent collections and validate
-candidate selection and ordering with denied-content mutation tests; disable a
-collection during security-sensitive rebuilds if isolation cannot be preserved.
-Arbitrary overlapping ACLs, index fan-out and freshness must be benchmarked;
-do not launch a collection that fails either isolation or latency acceptance.
+The access-equivalent collection rule above is a proposed control, not a proven
+guarantee of this prototype. Arbitrary overlapping ACLs, index fan-out and
+freshness must be benchmarked; do not launch a collection that fails either
+isolation or latency acceptance.
 Microsoft describes the [statistics used by Search scoring](https://learn.microsoft.com/en-us/azure/search/index-similarity-and-scoring).
 
 Confirm the approved region and paired-region policy, source systems and ACL semantics, retention

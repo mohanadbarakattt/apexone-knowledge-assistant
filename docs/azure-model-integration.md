@@ -9,8 +9,9 @@ security boundary into a prompt.
 ## One-sentence explanation
 
 The application decides **who may see which current evidence**; Azure AI Search
-finds within that allowed set; an Azure-hosted model helps choose relevant
-approved evidence; application code verifies and renders the answer with source
+finds within validated access-equivalent collections and mandatory filters; an
+Azure-hosted model helps choose relevant approved evidence. Application code
+verifies and renders the answer with source
 citations. The model never grants access or invents a missing fact.
 
 ## Employee question path
@@ -20,11 +21,12 @@ flowchart TD
   U[Employee question] --> I[Entra sign-in; API validates token]
   I --> A{Known identity and trusted entitlements?}
   A -->|No| D[Safe denial; no search or model call]
-  A -->|Yes| F[API chooses permitted index and mandatory ACL/status filters]
-  F --> S[Azure AI Search: rank only permitted candidates]
+  A -->|Yes| F{Clean access-equivalent collection available?}
+  F -->|No| N[Safe no-evidence, conflict or dependency response]
+  F -->|Yes| S[Azure AI Search: rank only permitted candidates]
   S --> R[Recheck ACL, revocation, effective date, version and source authority]
   R --> E{Sufficient approved evidence?}
-  E -->|No| N[Safe no-evidence, conflict or missing-term response]
+  E -->|No| N
   E -->|Yes| P[Build bounded evidence packet: question plus approved IDs and spans]
   P --> M[Regional Azure OpenAI deployment: select relevant evidence IDs]
   M --> V{Schema, ID membership, relevance and final access checks pass?}
@@ -46,6 +48,8 @@ case cannot affect Search scores, model input, output, citations or ordinary
 telemetry. For NexaServe, finding the contract does not authorize a numeric
 first-response target: the sufficiency gate identifies the missing executed
 schedule before the model can draft a commitment.
+This no-influence claim depends on the collection-admission and quarantine rule in
+`azure-architecture.md`; a mixed-access index with a result filter is not enough.
 
 ## Narrow model contract for a first launch
 
@@ -120,7 +124,7 @@ authorization, reviewed evidence or output verification.
 |---|---|
 | Unknown user or missing ACL metadata | Deny before Search or model call |
 | Restricted or retired document | No ranking influence, model input, citation or content log |
-| ACL revoked after indexing | Live eligibility gate blocks it before model input and again before response |
+| ACL revoked after indexing | Quarantine the affected collection before acknowledging the event; return a safe response until cleanup and verification |
 | No binding SLA or conflicting current versions | Safe, useful uncertainty; no model-created number |
 | Changed source span without approval | Abstain until reviewed; never auto-approve from text |
 | Model timeout, invalid schema, unknown ID or unsupported selection | Safe response; no ungrounded fallback |

@@ -64,7 +64,7 @@ PROJECT FILES AND LIMITS
 src/apex_assistant/ contains the local Python app and browser UI.
 data/assessment/ contains the supplied synthetic source pack; original PDF/DOCX files are references, while runtime search uses normalized text.
 evaluation/ contains the assessment cases and latest reports.
-docs/process-model.md explains the full decision flow; docs/azure-architecture.md and docs/azure-model-integration.md describe proposed Azure and model designs, not running cloud services.
+docs/process-model.md explains the full decision flow. docs/azure-architecture.md and docs/azure-model-integration.md describe proposed Azure and model designs, not running cloud services. The diagram marks trust boundaries. ADR 014 explains the Search isolation and revocation trade-off. The architecture lists launch tests and a regional-residency decision; none has been measured or approved in Azure.
 
 No AI model or agent runs in this local app. It works on a CPU without Azure or paid APIs. It handles supported topics, common paraphrases, some typos, and basic greetings, but it does not provide open-ended AI conversation. Citations refer to normalized text lines, not PDF page numbers. Source changes require review before new passages can be used as claims.
 

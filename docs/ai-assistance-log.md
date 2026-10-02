@@ -1,5 +1,13 @@
 # AI Assistance Log
 
+October 2 Azure design revision: At the candidate's request, Codex marked the
+diagram's trust boundaries, specified access-equivalent Search collections and
+fail-closed quarantine during revocation, added proposed measurable production
+acceptance checks, and made single-region residency a service-by-service
+go/no-go decision. ADR 014 records the tradeoff. The submitted design remains
+Azure-only and undeployed; no production isolation, SLO, cost or residency
+claim was experimentally verified. Candidate review and teach-back remain open.
+
 September 26 requirements audit: Codex compared the new brief with the earlier
 weighted listing, added a requirements/evidence review, clarified grading
 provenance and README disclosure/configuration, and tightened the evaluator
